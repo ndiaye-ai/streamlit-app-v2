@@ -107,7 +107,7 @@ st.divider()
 
 # --------------------- APERÇU ---------------------
 st.subheader("🧾 Aperçu des données")
-st.dataframe(fdf.head(200), width="stretch")
+st.dataframe(fdf.head(200), use_container_width=True)
 
 # --------------------- CHARTS ---------------------
 st.subheader("📈 Graphiques")
@@ -119,20 +119,18 @@ with tab1:
             dcol = st.selectbox("Colonne de date :", options=dt_cols)
             ycol = st.selectbox("Valeur à tracer :", options=num_cols, index=min(1, len(num_cols)-1))
             freq = st.selectbox("Fréquence", ["D", "W", "M"], index=2, help="D=jour, W=semaine, M=mois")
-            # Map pour compatibilité pandas (M -> ME : fin de mois)
-            freq_map = {"D": "D", "W": "W", "M": "ME"}
             ts = (
                 fdf[[dcol, ycol]]
                 .dropna()
                 .set_index(dcol)
                 .sort_index()
-                .resample(freq_map[freq])
+                .resample(freq)
                 .mean(numeric_only=True)
             )
-            st.line_chart(ts, height=360, width="stretch")
+            st.line_chart(ts, height=360)
         else:
             ycol = st.selectbox("Valeur à tracer :", options=num_cols)
-            st.line_chart(fdf[ycol], height=360, width="stretch")
+            st.line_chart(fdf[ycol], height=360)
     else:
         st.info("Aucune colonne numérique disponible pour tracer une courbe.")
 
@@ -152,9 +150,9 @@ with tab2:
                     tmp["__mois__"] = tmp[gcol].dt.to_period("M").dt.to_timestamp()
                     g = getattr(tmp.groupby("__mois__")[vcol], agg)().reset_index().rename(columns={"__mois__": gcol})
             g = g.sort_values(vcol, ascending=False)
-            st.bar_chart(g.set_index(g.columns[0])[vcol], height=360, width="stretch")
+            st.bar_chart(g.set_index(g.columns[0])[vcol], height=360)
             with st.expander("Voir la table agrégée"):
-                st.dataframe(g, width="stretch")
+                st.dataframe(g, use_container_width=True)
         else:
             st.info("Besoin d'au moins une colonne catégorielle ou date pour agréger.")
     else:
@@ -173,9 +171,7 @@ c1.download_button("⬇️ Télécharger en CSV", data=csv, file_name="donnees_f
 output = BytesIO()
 with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
     fdf.to_excel(writer, index=False, sheet_name="Data")
-output.seek(0)
-c2.download_button("⬇️ Télécharger en Excel",
-                   data=output.getvalue(),
+c2.download_button("⬇️ Télécharger en Excel", data=output.getvalue(),
                    file_name="donnees_filtrees.xlsx",
                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
